@@ -1,36 +1,80 @@
 <!doctype html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="theme-color" content="#e97842">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Yummy Food Restaurant</title>
-<link rel="stylesheet" href="style.css">
-<style>
-html,body,#hud,#start,#rotate,canvas{touch-action:none!important;overscroll-behavior:none;-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none}
-button{touch-action:manipulation!important;-webkit-user-select:none;user-select:none}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <meta name="theme-color" content="#f08a3c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Cooking Grammar Chef</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="start"><div class="card"><div class="hero">🧒🏻🍎🍔</div><h1>Yummy Food</h1><p class="intro">以高質 3D 動畫電影感角色走進餐廳，自由選擇食物。健康食物令角色更強壯；高糖高脂食物吃得太多，角色會逐漸變胖。</p><div class="guide"><div class="good">🥦 <b>健康餐區</b><br>增加健康與力量，並降低體脂。</div><div class="bad">🍔 <b>滋味快餐區</b><br>增加體脂，並降低角色健康。</div></div><button id="play">進入餐廳 ▶</button><div class="hint">電腦：WASD 移動、拖動滑鼠看四周、滾輪縮放、E 吃東西<br>手機：左邊搖桿移動、拖動右側畫面 360° 觀看</div></div></div>
-<div id="rotate">📱↔️<br><br>請把手機轉成橫向遊玩</div>
-<div id="hud"><div class="top"><div class="logo glass">🍽️ Yummy Food<small>Choose • Eat • Transform</small></div><div class="stats glass"><div><div class="line"><span>❤️ 健康</span><span id="hv">60</span></div><div class="bar"><div id="hb" class="fill health"></div></div></div><div><div class="line"><span>💪 力量</span><span id="pv">20</span></div><div class="bar"><div id="pb" class="fill power"></div></div></div><div><div class="line"><span>🍩 體脂</span><span id="fv">25</span></div><div class="bar"><div id="fb" class="fill fat"></div></div></div><div><div class="line"><span>⭐ 分數</span><span id="sv">0</span></div><div class="bar"><div id="sb" class="fill score"></div></div></div></div></div><div id="lookTip">🖱️ 拖動畫面可 360° 觀看</div><div id="mission" class="glass">🎯 任務：力量提升至 <b>80</b>，同時把體脂保持在 <b>40 以下</b>。</div><div id="prompt"></div><div id="toast"></div><div id="joy"><div id="knob"></div></div><button id="cam" aria-label="重設鏡頭">↻</button><button id="eat">食</button></div>
-<script>
-(()=>{
-  const stop=e=>e.preventDefault();
-  ['gesturestart','gesturechange','gestureend'].forEach(type=>document.addEventListener(type,stop,{passive:false}));
-  document.addEventListener('dblclick',stop,{passive:false});
-  document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
-  let lastTouchEnd=0;
-  document.addEventListener('touchend',e=>{
-    const now=Date.now();
-    if(now-lastTouchEnd<360)e.preventDefault();
-    lastTouchEnd=now;
-  },{passive:false});
-})();
-</script>
-<script type="module" src="game.js"></script>
+  <canvas id="gameCanvas" aria-label="3D cooking grammar game"></canvas>
+
+  <section id="start" class="screen">
+    <div class="panel start-panel">
+      <div class="badge">🍳 P4–P6 English Game</div>
+      <h1>Cooking Grammar Chef</h1>
+      <p class="intro">Read each sentence. Choose the best adjective or adverb. Correct answers add tasty ingredients and seasonings to your 3D dish!</p>
+
+      <form id="playerForm" class="player-form">
+        <label>Student name<input id="studentName" autocomplete="name" required placeholder="e.g. Mandy Chan"></label>
+        <label>Class<input id="studentClass" required placeholder="e.g. 5A"></label>
+        <label>Class number<input id="studentNumber" inputmode="numeric" required placeholder="e.g. 12"></label>
+        <button type="submit">Start Cooking ▶</button>
+      </form>
+      <p class="small">Works on iPad, phone and computer. Tap an answer to play.</p>
+    </div>
+  </section>
+
+  <main id="hud" class="hidden">
+    <header class="topbar">
+      <div class="logo">🍲 Grammar Chef <span>Adjectives & Adverbs</span></div>
+      <div class="scorebox">
+        <div><b id="score">0</b><span>Score</span></div>
+        <div><b id="qNo">1/12</b><span>Question</span></div>
+      </div>
+    </header>
+
+    <section class="question-card">
+      <div id="typeTag" class="tag">Adjective</div>
+      <p id="sentence">Loading...</p>
+      <div id="answers" class="answers"></div>
+      <p id="feedback" class="feedback"></p>
+    </section>
+
+    <aside class="dish-card">
+      <div>🍽️ Dish progress</div>
+      <div class="progress"><span id="progressFill"></span></div>
+      <p id="ingredientList">No ingredients yet.</p>
+    </aside>
+  </main>
+
+  <section id="result" class="screen hidden">
+    <div class="panel result-panel">
+      <div class="badge">✅ Finished</div>
+      <h2 id="resultTitle">Your dish is ready!</h2>
+      <p id="resultSummary"></p>
+      <div id="wrongReview" class="review"></div>
+      <div class="result-actions">
+        <button id="emailBtn">Send result by email</button>
+        <button id="copyBtn" class="secondary">Copy result</button>
+        <button id="againBtn" class="secondary">Play again</button>
+      </div>
+      <p class="small">The email button opens a prepared email to lauyuetki@twghscysps.edu.hk for sending.</p>
+    </div>
+  </section>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    (()=>{
+      const stop=e=>e.preventDefault();
+      ['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,stop,{passive:false}));
+      document.addEventListener('dblclick',stop,{passive:false});
+    })();
+  </script>
+  <script type="module" src="game.js"></script>
 </body>
 </html>
